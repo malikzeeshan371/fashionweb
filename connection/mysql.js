@@ -2,10 +2,10 @@ const mysql = require ("mysql");
  
 
 const pool = mysql.createPool({
-    host:"localhost",
-    user:"root",
-    password:"",
-    database:"fashion_web"
+    host:"sql.freedb.tech",
+    user:"freedb_fashion user",
+    password:"S#zhfT2WttuVd3z",
+    database:"freedb_fashion website"
 });
 
 pool.getConnection((err,conn)=>{
