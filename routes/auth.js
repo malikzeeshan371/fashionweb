@@ -1,0 +1,126 @@
+
+const express = require("express");
+const { body, validationResult } = require('express-validator');
+const userapi = require("../controller/user.js");
+const router = express.Router();
+const bcrypt = require("bcryptjs");
+const jwt = require('jsonwebtoken');
+const JWT_secret = 'fashionwebsite';
+const pool = require("../connection/mysql.js");
+const { response } = require("express");
+const e = require("express");
+
+/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+//  This is request for creating a new user : no login required
+router.post("/createuser", [
+    body('full_name', "enter valid name ").isLength({ min: 3 }),
+    body('email', " enter valid email").isEmail(),
+    body('password', "enter valid password").isLength({ min: 5 }),
+
+    body('mobile_number', "enter valid number ").isLength({ min: 10 }),
+
+
+], async (req, res) => {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    };
+    try {
+        //////////// check email already exist ///////////
+        await pool.query("SELECT * FROM user WHERE email=?", [req.body.user_email], (err, rows) => {
+            if (rows.length > 0) {
+                return res.status(400).json("A user with this email already exist ");
+            }
+        })
+
+
+        ////////// secure password hash //////////
+        const salt = await bcrypt.genSalt(10);
+        const secpassword = await bcrypt.hash(req.body.password, salt);
+
+        ///////////  create user /////////////////
+        const user = await pool.query("INSERT INTO user(full_name,email,mobile_number,password,status) values (?,?,?,?,?) ", [req.body.full_name, req.body.email, req.body.mobile_number, secpassword, req.body.status], (err, rows) => {
+            if (!err) {
+                res.status(200).json("User has been created.");
+            } else {
+                console.log(err)
+                return res.status(400).json("can not add into database");
+
+            }
+
+        })
+
+    }
+    catch (error) {
+        console.error(error.message);
+        res.status(400).send("internal server error");
+
+    }
+
+})
+/////////////////////// end ///////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+//////// This is request for login a user : no login required ////////////
+
+router.get("/login", [
+    body('email', " enter valid email").isEmail(),
+    body('password', "password can not be blank").exists(),
+], async (req, res) => {
+    /////////////// check for valid password //////////
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    };
+
+    try {
+       
+        ////////////// find that user exist ///////////
+        const user = await pool.query("SELECT * FROM user WHERE email=?", [req.body.email], (err, rows) => {
+            if (rows.length == 0) {
+                return res.status(400).json("A user with this email does not exist ");
+            } else {
+                /////////////// check for  password //////////
+                const checkpassword = bcrypt.compareSync(req.body.password, rows[0].password)
+                if (!checkpassword) {
+                    return res.status(400).json("Wrong password or username!");
+                }
+                //////////// if email and password is correct then login /////////
+                const token = jwt.sign({ id: rows[0].id }, JWT_secret);
+
+                const { password, ...others } = rows[0];
+
+                res
+                    .cookie("accessToken", token, {
+                        httpOnly: true,
+                    })
+                    .status(200)
+                    .json(others);
+            }
+        })
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(400).send("internal server error");
+
+    }
+})
+
+/////////////////////// end ///////////////////////////////////////////
+
+
+//////// This is request for get user detail ////////////
+router.post("/logout", (req, res) => {
+    res.clearCookie("accessToken", {
+      secure: true,
+      sameSite: "none"
+    }).status(200).json("User has been logged out.")
+  });
+  
+
+module.exports = router;
