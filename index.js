@@ -9,11 +9,7 @@ const cookieParser =require("cookie-parser")
 
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({extended:true}))
-app.use(
-    cors({
-      origin: "http://localhost:8000",
-    })
-  );
+app.use();
   app.use(cookieParser());
 
   app.use('/profile', express.static('./upload/images'));
@@ -67,6 +63,4 @@ app.use("/api/trend",require("./routes/top_trend"));
 
 
 
-app.listen("8000",()=>{
-    console.log (" ho gaya connect bhai")
-})
+app.listen()
