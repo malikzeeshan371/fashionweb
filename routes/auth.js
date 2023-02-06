@@ -101,7 +101,7 @@ router.post("/createuser", [
 
 
 ///// to check email varification //////////
-router.get("/varify", async (req, res) => {
+router.post("/varify", async (req, res) => {
     await pool.query("SELECT code from uservarification where user_id=?", [req.body.user_id], (err, rows) => {
         if (err) {
             res.json(err)
@@ -133,7 +133,7 @@ router.get("/varify", async (req, res) => {
 
 //////// This is request for login a user : no login required ////////////
 
-router.get("/login", [
+router.post("/login", [
     body('email', " enter valid email").isEmail(),
     body('password', "password can not be blank").exists(),
 ], async (req, res) => {
