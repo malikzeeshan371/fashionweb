@@ -1,5 +1,5 @@
 const express =require("express");
-const { getPost, addPost, deletePost, updatePost } = require("../controller/post");
+const { addPost, deletePost, updatePost, getPostpublic, getPostfriends } = require("../controller/post");
 const router = express.Router();
 const multer = require("multer");
 const path =require("path")
@@ -24,7 +24,9 @@ const storage = multer.diskStorage({
 
 
 ////////////// this is request to get all post //////////////
-router.get("/getpost/",getPost);
+router.get("/getpostpublic/",getPostpublic);
+////////////// this is request to get all post from frinds //////////////
+router.get("/getpostfriends/",getPostfriends);
 ////////////// this is request to add post //////////////
 router.post("/addpost",upload.single('image'),addPost);
 ////////////// this is request to delete post //////////////
