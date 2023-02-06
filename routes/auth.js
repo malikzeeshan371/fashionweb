@@ -3,6 +3,7 @@ const express = require("express");
 const { body, validationResult } = require('express-validator');
 const userapi = require("../controller/user.js");
 const router = express.Router();
+const moment = require("moment");
 const nodemailer = require('nodemailer');
 const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
@@ -69,7 +70,7 @@ router.post("/createuser", [
                       await  transporter.sendMail(mailto);
 
                         ////////// saving code to db ///////////////
-                        pool.query("INSERT INTO uservarification(user_id,code) values (?,?)", [data.insertId, code], (err, rows) => {
+                        pool.query("INSERT INTO uservarification(user_id,code,date_time) values (?,?,?)", [data.insertId, code,moment(Date.now()).format("YYYY-MM-DD HH:mm:ss")], (err, rows) => {
                             if (err) {
                                 res.json(err)
                             }
