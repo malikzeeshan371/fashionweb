@@ -55,7 +55,7 @@ exports.addPost = (req, res) => {
       userInfo.id,
       req.body.title,
       req.body.description,
-      image = `http://localhost:8000/profile/${req.file.filename}`,
+      image = `https://fashionweb-production.up.railway.app/profile/${req.file.filename}`,
       req.body.status,
       req.body.is_profile,
       moment(Date.now()).format("YYYY-MM-DD HH:mm:ss")
