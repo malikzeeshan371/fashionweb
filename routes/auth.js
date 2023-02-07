@@ -75,7 +75,7 @@ router.post("/createuser", [
                                 res.json(err)
                             }
                             else {
-                                res.send({ message: "varification code is sent ", user_id = data.insertId });
+                                res.send({ message: "varification code is sent ", user_id : data.insertId });
                             }
                         })
 
