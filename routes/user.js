@@ -1,6 +1,6 @@
 
 const express =require("express");
-const { getUser, getalluser, deleteuser, updateuser } = require("../controller/user");
+const { getUser, getalluser, deleteuser, updateuser, updateuserpassword } = require("../controller/user");
 const router = express.Router();
 
 
@@ -13,6 +13,8 @@ router.get("/getalluser", getalluser)
 router.delete("/deleteuser/:id",deleteuser)
 ///////// this is request to update user data //////////////
 router.put("/updateuser",updateuser)
+///////// this is request to update user data //////////////
+router.put("/updateuserpassword",updateuserpassword)
 
 
 module.exports = router;
