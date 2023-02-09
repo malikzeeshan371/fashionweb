@@ -2,6 +2,7 @@ const pool = require("../connection/mysql.js");
 const jwt = require('jsonwebtoken');
 const moment = require("moment")
 const JWT_secret = 'fashionwebsite';
+const bcrypt = require("bcryptjs");
 
 
 
@@ -71,4 +72,38 @@ exports.updateuser = (req, res) => {
       })
     })
   }
+///////////// request to update a user /////////////
+exports.updateuserpassword = (req, res) => {
+  ////////// verifying old password ////////
+  const userId = req.body.userid;
+  const q = "SELECT password FROM user WHERE id=?";
+
+  pool.query(q, [userId], async (err, data) => {
+    if (err) {
+      return res.status(500).json(err);
+    }
+    else {
+      ////////// checking old pass word ///////////
+      const checkpassword = bcrypt.compareSync(req.body.oldpassword, data[0].password)
+      if (!checkpassword) {
+        return res.status(400).json("Wrong password");
+      }
+      // ////////// secure password hash //////////
+      const salt = await bcrypt.genSalt(10);
+      const secpassword = await bcrypt.hash(req.body.newpassword, salt);
+      //////////// storing new password  ////////////
+      await pool.query("UPDATE user SET password=? WHERE id=? ",
+        [
+          secpassword,
+          req.body.userid
+
+        ],
+        (err, rows) => {
+          if (err) res.status(500).json(err);
+          if (rows.affectedRows > 0) return res.json("Updated!");
+          return res.status(403).json("You can update only your post!");
+        })
+    }
+  });
+}
 
