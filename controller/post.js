@@ -10,14 +10,36 @@ exports.getPostpublic = (req, res) => {
 
   //   ////////////////// select all post ///////////
   let final = [];
-  pool.query("SELECT p.*, u.full_name AS post_auther  FROM post AS p JOIN user AS u ON (u.id = p.user_id) WHERE p.status = ?", ["public"], async (err, rows) => {
+  pool.query("SELECT p.*, u.full_name AS post_auther  FROM post AS p JOIN user AS u ON (u.id = p.user_id) WHERE p.status = ? ORDER BY p.id DESC", ["public"], async (err, rows) => {
     if (!err) {
 
-      await rows.forEach(element => {
+      await rows.forEach(async element => {
         let postid = element.id
         let postss = {};
-        postss = element
-        pool.query("SELECT c.id,c.comment,c.user_id, u.full_name AS comment_auther  FROM posts_comments AS c JOIN user AS u ON (u.id = c.user_id) where post_id=?", [postid], async (err, com) => {
+        postss = element;
+        ////////////////// select all like of post ///////////
+        await pool.query("SELECT status FROM post_like_dislike where post_id=? and status=? ", [postid, "like"], (err, rows) => {
+          if (!err) {
+            const like = rows.length
+
+            Object.assign(postss, { "likes": like });
+          } else {
+            return res.status(403).json("invalid error");
+          }
+        })
+        ////////////////// select all like of post ///////////
+        // const dislike = "dislike";
+        await pool.query("SELECT status FROM post_like_dislike where post_id=? and status=? ", [postid, "dislike"], (err, rows) => {
+          if (!err) {
+            const dislike = rows.length
+
+            Object.assign(postss, { "dislikes": dislike });
+          } else {
+            return res.status(403).json("invalid error");
+          }
+        })
+
+        await pool.query("SELECT c.id,c.comment,c.user_id, u.full_name AS comment_auther  FROM posts_comments AS c JOIN user AS u ON (u.id = c.user_id) where post_id=?", [postid], async (err, com) => {
           if (!err) {
             Object.assign(postss, { "comments": com });
             final.push(postss)
@@ -26,10 +48,11 @@ exports.getPostpublic = (req, res) => {
             return res.status(403).json(err);
           }
         })
+
       })
       setTimeout(() => {
         res.json(final)
-      }, 4000)
+      }, 3000)
 
     } else {
       return res.status(403).json(err);
@@ -52,13 +75,34 @@ exports.getPostfriends = (req, res) => {
     ////////////////// select all post ///////////
     let final = [];
     pool.query(`SELECT p.*, u.id AS userId, full_name as post_auther FROM post AS p JOIN user AS u ON (u.id = p.user_id)
-    LEFT JOIN follower AS f ON (p.user_id = f.followed_user_id) WHERE f.following_user_id= ? OR p.user_id =? ORDER BY p.date_time DESC`, [userInfo.id, userInfo.id], async (err, rows) => {
+    LEFT JOIN follower AS f ON (p.user_id = f.followed_user_id) WHERE f.following_user_id= ? OR p.user_id =? ORDER BY p.id DESC`, [userInfo.id, userInfo.id], async (err, rows) => {
       if (!err) {
-        await rows.forEach(element => {
+        await rows.forEach(async element => {
           let postid = element.id
           let postss = {};
           postss = element
-          pool.query("SELECT c.id,c.comment,c.user_id, u.full_name AS comment_auther  FROM posts_comments AS c JOIN user AS u ON (u.id = c.user_id) where post_id=?", [postid], async (err, com) => {
+          ////////////////// select all like of post ///////////
+          await pool.query("SELECT status FROM post_like_dislike where post_id=? and status=? ", [postid, "like"], (err, rows) => {
+            if (!err) {
+              const like = rows.length
+
+              Object.assign(postss, { "likes": like });
+            } else {
+              return res.status(403).json("invalid error");
+            }
+          })
+          ////////////////// select all like of post ///////////
+          // const dislike = "dislike";
+          await pool.query("SELECT status FROM post_like_dislike where post_id=? and status=? ", [postid, "dislike"], (err, rows) => {
+            if (!err) {
+              const dislike = rows.length
+
+              Object.assign(postss, { "dislikes": dislike });
+            } else {
+              return res.status(403).json("invalid error");
+            }
+          })
+          await pool.query("SELECT c.id,c.comment,c.user_id, u.full_name AS comment_auther  FROM posts_comments AS c JOIN user AS u ON (u.id = c.user_id) where post_id=?", [postid], async (err, com) => {
             if (!err) {
               Object.assign(postss, { "comments": com });
               final.push(postss)
@@ -70,7 +114,7 @@ exports.getPostfriends = (req, res) => {
         })
         setTimeout(() => {
           res.json(final)
-        }, 4000)
+        }, 3000)
       } else {
         return res.status(403).json(err);
       }
