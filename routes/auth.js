@@ -99,10 +99,9 @@ router.post("/createuser", [
 })
 /////////////////////// end ///////////////////////////////////////////
 
-
 ///// to check email varification //////////
-router.post("/varify", async (req, res) => {
-    await pool.query("SELECT code from uservarification where user_id=? ORDER BY id DESC", [req.body.user_id], (err, rows) => {
+router.get("/varify", async (req, res) => {
+    await pool.query("SELECT code from uservarification where user_id=? ORDER BY id DESC", [req.body.user_id], async (err, rows) => {
         if (err) {
             res.json(err)
         }
@@ -111,15 +110,32 @@ router.post("/varify", async (req, res) => {
             const varify = req.body.code;
             if (code == varify) {
                 ///////////// updating data into post /////////////
-                pool.query("UPDATE user SET verify_by_email=? WHERE id=? ",
+                await pool.query("UPDATE user SET verify_by_email=? WHERE id=? ",
                     [
                         1,
                         req.body.user_id
                     ],
                     (err, rows) => {
                         if (err) res.status(500).json(err);
-                        if (rows.affectedRows > 0) return res.json("verified");
+                        // if (rows.affectedRows > 0) return res.json("verified");
                     })
+                await pool.query("SELECT * FROM user WHERE id=?", [req.body.user_id], async (err, rows) => {
+                    if (!err) {
+                        const token = await jwt.sign({ id: req.body.user_id }, JWT_secret);
+
+                        const { password, ...others } = rows[0];
+
+                        res
+                            .cookie("accessToken", token, {
+                                httpOnly: true,
+                            })
+                            .status(200)
+                            .json(others);
+                    }
+                    else {
+                        return res.status(500).json(err);
+                    }
+                })
 
             } else {
                 res.json("worng code")
@@ -133,7 +149,7 @@ router.post("/varify", async (req, res) => {
 
 //////// This is request for login a user : no login required ////////////
 
-router.post("/login", [
+router.get("/login", [
     body('email', " enter valid email").isEmail(),
     body('password', "password can not be blank").exists(),
 ], async (req, res) => {
@@ -146,7 +162,7 @@ router.post("/login", [
     try {
 
         ////////////// find that user exist ///////////
-        const user = await pool.query("SELECT * FROM user WHERE email=?", [req.body.email], (err, rows) => {
+        const user = await pool.query("SELECT * FROM user WHERE email=?", [req.body.email], async (err, rows) => {
             if (rows.length == 0) {
                 return res.status(400).json("A user with this email does not exist ");
             } else {
@@ -155,17 +171,40 @@ router.post("/login", [
                 if (!checkpassword) {
                     return res.status(400).json("Wrong password or username!");
                 }
-                //////////// if email and password is correct then login /////////
-                const token = jwt.sign({ id: rows[0].id }, JWT_secret);
+                // //////////// if email and password is correct then login /////////
+                //////////// send varification code ///////////
+                const code = `${Math.floor(1000 + Math.random() * 9000)}`
+                ///////////// email varification ////////
+                const mailto = {
+                    from: "developerhex1@gmail.com",
+                    to: req.body.email,
+                    subject: "verify your email",
+                    html: `<p>your email varification code is <b>${code}</b>`
+                }
+                await transporter.sendMail(mailto);
+                /////////
+                const userid = rows[0].id
 
-                const { password, ...others } = rows[0];
+                ////////// saving code to db ///////////////
+                await pool.query("INSERT INTO uservarification(user_id,code) values (?,?)", [userid, code], (err, rows) => {
+                    if (err) {
+                        res.json(err)
+                    }
+                    else {
+                        res.send({ message: "varification code is sent ", user_id: userid });
+                    }
+                })
 
-                res
-                    .cookie("accessToken", token, {
-                        httpOnly: true,
-                    })
-                    .status(200)
-                    .json(others);
+                // const token = jwt.sign({ id: rows[0].id }, JWT_secret);
+
+                // const { password, ...others } = rows[0];
+
+                // res
+                //     .cookie("accessToken", token, {
+                //         httpOnly: true,
+                //     })
+                //     .status(200)
+                //     .json(others);
             }
         })
 
@@ -175,6 +214,7 @@ router.post("/login", [
 
     }
 })
+
 
 /////////////////////// end ///////////////////////////////////////////
 
