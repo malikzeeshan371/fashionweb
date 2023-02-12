@@ -186,7 +186,7 @@ router.post("/login", [
                 const userid = rows[0].id
 
                 ////////// saving code to db ///////////////
-                await pool.query("INSERT INTO uservarification(user_id,code) values (?,?)", [userid, code], (err, rows) => {
+                await pool.query("INSERT INTO uservarification(user_id,code,date_time) values (?,?,?)", [userid, code,moment(Date.now()).format("YYYY-MM-DD HH:mm:ss")], (err, rows) => {
                     if (err) {
                         res.json(err)
                     }
