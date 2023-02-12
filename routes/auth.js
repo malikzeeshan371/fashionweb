@@ -149,7 +149,7 @@ router.get("/varify", async (req, res) => {
 
 //////// This is request for login a user : no login required ////////////
 
-router.get("/login", [
+router.post("/login", [
     body('email', " enter valid email").isEmail(),
     body('password', "password can not be blank").exists(),
 ], async (req, res) => {
