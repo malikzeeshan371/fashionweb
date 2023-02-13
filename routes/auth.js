@@ -100,7 +100,7 @@ router.post("/createuser", [
 /////////////////////// end ///////////////////////////////////////////
 
 ///// to check email varification //////////
-router.get("/varify", async (req, res) => {
+router.post("/varify", async (req, res) => {
     await pool.query("SELECT code from uservarification where user_id=? ORDER BY id DESC", [req.body.user_id], async (err, rows) => {
         if (err) {
             res.json(err)
