@@ -14,6 +14,12 @@ app.use(cors());
 
   app.use('/profile', express.static('./upload/images'));
 
+///////////////////////////// cookies ///////////////
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Credentials", true);
+  next();
+});
+
 /////////////////////     routes    /////////////////////////
 ///////////////// auth route //////////////////
 app.use("/api/auth",require("./routes/auth.js"));
